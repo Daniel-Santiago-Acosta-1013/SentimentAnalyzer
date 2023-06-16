@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, filedialog, messagebox
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -7,7 +7,6 @@ from sklearn import metrics
 import pandas as pd
 
 class SentimentModel:
-
     def __init__(self):
         self.vectorizer = CountVectorizer()
         self.model = MultinomialNB()
@@ -28,40 +27,40 @@ class SentimentModel:
         X_dtm = self.vectorizer.transform(X)
         return self.model.predict(X_dtm)
 
-# Function to train the model
-def train_model():
-    df = pd.read_csv('sentiment.csv')
-    model = SentimentModel()
-    accuracy = model.train(df['text'], df['sentiment'])
-    messagebox.showinfo("Model Training", f"Model trained with accuracy: {accuracy}")
-    return model
+def load_file():
+    filename = filedialog.askopenfilename(filetypes=[('CSV Files', '*.csv')])
+    if filename:
+        df = pd.read_csv(filename)
+        accuracy = model.train(df['text'], df['sentiment'])
+        messagebox.showinfo("Model Training", f"Model trained with accuracy: {accuracy}")
 
-# Function to predict sentiment
-def predict_sentiment(model):
-    text = text_entry.get()
+def predict_sentiment():
+    text = text_entry.get('1.0', 'end')
     prediction = model.predict([text])
     messagebox.showinfo("Prediction", f"The sentiment is: {prediction[0]}")
 
-# Create the main window
 root = tk.Tk()
 
-# Create a StringVar to store the text
-text_entry = tk.StringVar()
+model = SentimentModel()
 
-# Create the training window
-train_window = tk.Toplevel(root)
-train_window.title("Train Model")
-train_button = tk.Button(train_window, text="Train Model", command=train_model)
-train_button.pack()
+notebook = ttk.Notebook(root)
 
-# Create the prediction window
-predict_window = tk.Toplevel(root)
-predict_window.title("Predict Sentiment")
-text_label = tk.Label(predict_window, text="Enter Text:")
+train_frame = ttk.Frame(notebook)
+notebook.add(train_frame, text='Train Model')
+
+load_button = ttk.Button(train_frame, text="Load CSV", command=load_file)
+load_button.pack()
+
+test_frame = ttk.Frame(notebook)
+notebook.add(test_frame, text='Test Model')
+
+text_label = ttk.Label(test_frame, text="Enter Text:")
 text_label.pack()
-text_entry_widget = tk.Entry(predict_window, textvariable=text_entry)
-text_entry_widget.pack()
-predict_button = tk.Button(predict_window, text="Predict Sentiment", command=lambda: predict_sentiment(model))
+text_entry = tk.Text(test_frame, width=50, height=10)
+text_entry.pack()
+predict_button = ttk.Button(test_frame, text="Predict Sentiment", command=predict_sentiment)
 predict_button.pack()
+
+notebook.pack(expand=1, fill='both')
 
 root.mainloop()
