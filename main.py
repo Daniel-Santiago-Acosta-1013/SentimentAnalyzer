@@ -51,10 +51,8 @@ class SentimentModel:
         X_dtm = self.vectorizer.transform(X)
         return self.model.predict(X_dtm)
 
-    def show_stats(self, X_test, y_test):
-        disp = self.plot_confusion_matrix(self.model, X_test, y_test, cmap=plt.cm.Blues)
-        disp.ax_.set_title("Confusion Matrix")
-        plt.show()
+    def show_stats(self, y_test, y_pred_class):
+        self.plot_confusion_matrix(y_test, y_pred_class, classes=np.unique(y_test), cmap=plt.cm.Blues)
 
     def load_file(self):
         filename = filedialog.askopenfilename(filetypes=[('CSV Files', '*.csv'), ('Excel Files', '*.xlsx'), ('JSON Files', '*.json')])
@@ -72,16 +70,21 @@ class SentimentModel:
 
                 lemmatizer = WordNetLemmatizer()
                 df['text'] = df['text'].apply(lambda x: ' '.join([lemmatizer.lemmatize(word) for word in x.split()]))
-                X_test, y_test, y_pred_class, accuracy = self.train(df['text'], df['sentiment'])
+                X_test_dtm, y_test, y_pred_class, accuracy = self.train(df['text'], df['sentiment'])
                 messagebox.showinfo("Model Training", f"Model trained with accuracy: {accuracy}")
-                self.show_stats(X_test, y_test)
+                self.show_stats(y_test, y_pred_class)
+            except KeyError as e:
+                messagebox.showerror("Error loading file", f"Missing column in data: {str(e)}")
             except Exception as e:
                 messagebox.showerror("Error loading file", str(e))
 
     def predict_sentiment(self):
-        text = self.text_entry.get('1.0', 'end')
-        prediction = self.predict([text])
-        messagebox.showinfo("Prediction", f"The sentiment is: {prediction[0]}")
+        try:
+            text = self.text_entry.get('1.0', 'end')
+            prediction = self.predict([text])
+            messagebox.showinfo("Prediction", f"The sentiment is: {prediction[0]}")
+        except Exception as e:
+            messagebox.showerror("Prediction Error", str(e))
 
     def setup_ui(self):
         notebook = ttk.Notebook(self.root)
@@ -89,7 +92,7 @@ class SentimentModel:
         train_frame = ttk.Frame(notebook)
         notebook.add(train_frame, text='Train Model')
 
-        load_button = ttk.Button(train_frame, text="Load CSV", command=self.load_file)
+        load_button = ttk.Button(train_frame, text="Load CSV/json/excel", command=self.load_file)
         load_button.pack()
 
         test_frame = ttk.Frame(notebook)
